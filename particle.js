@@ -1,95 +1,60 @@
-// Daniel Shiffman
-// https://www.kadenze.com/courses/the-nature-of-code
-// http://natureofcode.com/
-// Session 2: Array of Particles, multiple forces
+function Particle() {
+    this.pos = createVector(random(width), random(height));
+    this.vel = createVector(0, 0);
+    this.acc = createVector(0, 0);
+    this.maxSpeed = 2;
+    this.red = 0;
 
-function Particle(width, height) {
-  this.pos = createVector(random(0, width), random(0, height));
-  this.vel = createVector(0, 0);
-  this.acc = createVector(0, 0);
-  this.bounces = 0;
-  this.history = [];
+    this.prevPos = this.pos.copy();
 
-  this.applyForce = function(force) {
-    // this.acc.set(0,0);
-    this.acc.add(force);
-    this.acc.mult(1);
-  }
-
-  this.update = function(frameCount) {
-    // if (this.history.length > 1000) {
-    //   this.history.splice(0, 1);
-    // }
-    if (frameCount % 10 === 0) {
-      let currentPos = createVector(this.pos.x, this.pos.y);
-      this.history.push(currentPos);      
-    }
-    this.vel.add(this.acc);
-    this.pos.add(this.vel);
-    this.acc.set(0, 0);
-  }
-
-  this.display = function() {
-    fill(255, 150);
-    stroke(255);
-    ellipse(this.pos.x, this.pos.y, 5, 5);
-
-    // for (let i = 0; i < this.history.length; i++) {
-    //   fill(255, 150);
-    //   ellipse(this.history[i].x, this.history[i].y, 2, 2);
-    // }
-  }
-
-  this.edges = function() {
-    // if (this.bounces === 4) {
-    //   this.pos.x += width / 10;
-    //   this.pos.y += height / 10;
-    //   this.bounces = 0;
-    // }
-
-    // if (this.pos.y > height && this.bounces < 4) {
-    //   this.vel.y *= -1;
-    //   this.pos.y = height;
-    //   this.bounces += 1;
-    // }
-
-    // if (this.pos.x > width && this.bounces < 4) {
-    //   this.vel.x *= -1;
-    //   this.pos.x = width;
-    //   this.bounces += 1;
-    // }
-
-    // if (this.pos.y < 0 && this.bounces < 4) {
-    //   this.vel.y *= -1;
-    //   this.pos.y = 0;
-    //   this.bounces += 1;
-    // }
-
-    // if (this.pos.x < 0 && this.bounces < 4) {
-    //   this.vel.x *= -1;
-    //   this.pos.x = 0;
-    //   this.bounces += 1;
-    // }
-
-    if (this.pos.y > height) {
-      this.vel.y *= -1;
-      this.pos.y = height;
+    this.update = function() {
+        this.vel.add(this.acc);
+        this.vel.limit(this.maxSpeed);
+        this.pos.add(this.vel);
+        this.acc.mult(0);
     }
 
-    if (this.pos.x > width) {
-      this.vel.x *= -1;
-      this.pos.x = width;
+    this.appyForce = function(force) {
+        this.acc.add(force);
     }
 
-    if (this.pos.y < 0) {
-      this.vel.y *= -1;
-      this.pos.y = 0;
+    this.show = function() {
+        stroke(this.red, this.pos.x, this.pos.y, 5);
+        strokeWeight(1);
+        line(this.pos.x, this.pos.y, this.prevPos.x, this.prevPos.y);
+        this.updatePrev();
     }
 
-    if (this.pos.x < 0) {
-      this.vel.x *= -1;
-      this.pos.x = 0;
+    this.updatePrev = function() {
+        this.prevPos.x = this.pos.x;
+        this.prevPos.y = this.pos.y;
     }
-    
-  }
+
+    this.edges = function() {
+        if (this.pos.x > width) {
+            this.pos.x = 0;
+            this.updatePrev();
+        }
+        if (this.pos.y > height) {
+            this.pos.y = 0;
+            this.updatePrev();
+        }
+        if (this.pos.x < 0) {
+            this.pos.x = width;
+            this.updatePrev();
+        }
+        if (this.pos.y < 0) {
+            this.pos.y = height;
+            this.updatePrev();
+        }
+    }
+
+    this.follow = function(vectors, scl, cols)  {
+        var x = floor(this.pos.x / scl);
+        var y = floor(this.pos.y / scl);
+        var index = x + y * cols;
+        var force = vectors[index];
+        this.red = map(force.heading(), 0, TWO_PI, 0, 255);
+        this.appyForce(force);
+    }
 }

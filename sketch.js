@@ -3,70 +3,64 @@
 // http://natureofcode.com/
 // Session 2: Array of Particles, multiple forces
 
+var inc = 0.07;
+var resolution = 10;
+var cols, rows;
+var zoff = 0;
 var particles = [];
-var width;
-var height;
-var numberOfParticles = 500;
-var forces = [];
+var flowField = [];
 
 function setup() {
-  width = 1000;
-  height = 1000;
-  createCanvas(width, height);
-  forces = [
-    createVector(0.5, 0.5),
-    createVector(-0.5, 0.5),
-    createVector(0.5, -0.5),
-    createVector(-0.5, -0.5),
-    createVector(0.5, 0.5),
-  ]
-  for (var i = 0; i < numberOfParticles; i++) {
-    var particle = new Particle(width, height);
-    particles.push(particle);
+  let cnv = createCanvas(500, 500);
+  cnv.position(100, 100);
+  cols = floor(width / resolution);
+  rows = floor(height / resolution);
+
+  flowField = new Array(cols * rows);
+  for (var i = 0; i < 200; i++) {
+    particles[i] = new Particle();
   }
-  
-  
-  // for (var i = 0; i < numberOfParticles; i++) {
-  //   var particle = new Particle(random(0, width), random(0, height));
-  //   particles.push(particle);
-  // }
+  background(0);
 }
-
-// function mousePressed() {
-//   var p = new Particle(mouseX, mouseY, random(2,4));
-//   particles.push(p);
-// }
-
-// function keyPressed() {
-//   if (key == ' ') {
-//     particles.splice(0, 1);
-//   }
-
-// }
 
 function draw() {
-  background(0);
+  // Generate 3-d Perlin Noise flow field
+  var yoff = 0;
+  for (var y = 0; y <= rows; y++) {    
+    var xoff = 0;
+    for (var x = 0; x <= cols; x++) {
+      var index = x + y * cols;
+      var angle = noise(xoff, yoff, zoff) * TWO_PI;
+      var v = p5.Vector.fromAngle(angle);
+      v.setMag(1);
+      flowField[index] = v;
+      xoff += inc;
+      
+      // push();
+      // translate(x * resolution, y * resolution);
+      // fill(0, 20);
+      // stroke(0, 20);
+      // ellipse(0, 0, 3, 3);
+      // noFill();
+      // stroke(0, 20);
+      // rect(0, 0, resolution, resolution);
+      // rotate(v.heading());
+      // stroke(0, 50);
+      // line(0, 0, scl, 0);
+      // pop();
+    }
+    yoff += inc;
+    zoff += 0.0004;
+  }
 
+  // Update particles' positions and draw to canva
   for (var i = 0; i < particles.length; i++) {
-    
-    for (var j = i + 1; j < particles.length; j++) {
-      var length = p5.Vector.sub(particles[j].pos, particles[i].pos);
-      if (length.mag() < 40) {
-        var normalizedLength = map(length.mag(), 0, max(width, height), 1 , 0);
-        stroke(255);
-        strokeWeight(normalizedLength);
-        line(particles[i].pos.x, particles[i].pos.y, particles[j].pos.x, particles[j].pos.y);
-      }      
-    }
-
-    if (frameCount === 1) {
-      var force = createVector(random(-1, 1), random(-1, 1));
-      // particles[i].applyForce(forces[i]);
-      particles[i].applyForce(force);
-    }
-
-    particles[i].update(frameCount);
+    particles[i].follow(flowField, resolution, cols);
+    particles[i].update();
     particles[i].edges();
-    particles[i].display();
+    particles[i].show();
   }
 }
+
+
+
